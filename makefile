@@ -1,4 +1,4 @@
-all: famsa 
+all: famsa3di
 
 
 ####################
@@ -11,7 +11,7 @@ ifeq ($(UNAME_S),Darwin)
 	ABI_FLAG =
 	CLINK_FLAGS =
 else
-	ABI_FLAG = -fabi-version=0 
+	ABI_FLAG = -fabi-version=0
 	CLINK_FLAGS = -lrt
 endif
 
@@ -47,7 +47,7 @@ $(info *** Detecting g++ version 11 ***)
 		DEFINE_FLAGS = -DOLD_ATOMIC_FLAG
 	else
 		CPP_STD=c++20
-		DEFINE_FLAGS = 
+		DEFINE_FLAGS =
 	endif
 else
 $(info *** Detecting g++ version 12 or higher ***)
@@ -56,7 +56,7 @@ $(info *** Detecting g++ version 12 or higher ***)
 		DEFINE_FLAGS = -DOLD_ATOMIC_FLAG
 	else
 		CPP_STD=c++20
-		DEFINE_FLAGS = 
+		DEFINE_FLAGS =
 	endif
 #	DEFINE_FLAGS = -DUSE_NATIVE_BARRIERS
 endif
@@ -67,11 +67,11 @@ SIMD_AVX2=2
 SIMD_AVX512=3
 SIMD_NEON=4
 
- 
+
 # Detecting user's options and add flags
-ifeq ($(PLATFORM), none) 
+ifeq ($(PLATFORM), none)
 $(info *** Unspecified platform w/o extensions ***)
-	COMMON_FLAGS :=  
+	COMMON_FLAGS :=
 	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NONE)
 	SIMD=NONE
 else ifeq ($(PLATFORM), arm8)
@@ -105,23 +105,23 @@ $(info *** x86-64 with AVX2 extensions***)
 	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_AVX2)
 	SIMD=AVX2
 endif
- 
+
 
 # get commit hash
-GIT_COMMIT = $(shell git describe --always --dirty) 
+GIT_COMMIT = $(shell git describe --always --dirty)
 DEFINE_FLAGS := $(DEFINE_FLAGS) -DGIT_COMMIT=$(GIT_COMMIT)
 
 INC_DIRS =. libs/mimalloc/include libs
 INCLUDES=$(foreach d, $(INC_DIRS), -I$d)
- 
-ifeq ($(STATIC_LINK), true) 
+
+ifeq ($(STATIC_LINK), true)
 	CXXFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 $(COMMON_FLAGS) $(DEFINE_FLAGS) -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD) $(INCLUDES)
 	CLINK	= -lm -static -O3 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD)
 else
 	CXXFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 $(COMMON_FLAGS) $(DEFINE_FLAGS) -std=$(CPP_STD) -pthread $(INCLUDES)
-	CLINK	= -lm $(CLINK_FLAGS) -O3 $(COMMON_FLAGS) -std=$(CPP_STD) -pthread 
+	CLINK	= -lm $(CLINK_FLAGS) -O3 $(COMMON_FLAGS) -std=$(CPP_STD) -pthread
 endif
- 
+
 CXXFLAGS_AVX = $(CXXFLAGS) -mavx ${ABI_FLAG} -mpopcnt -funroll-loops
 CXXFLAGS_AVX2 = $(CXXFLAGS) -mavx2 ${ABI_FLAG} -mpopcnt -funroll-loops
 CXXFLAGS_NEON = $(CXXFLAGS) ${ABI_FLAG} -funroll-loops
@@ -129,7 +129,7 @@ CXXFLAGS_NEON = $(CXXFLAGS) ${ABI_FLAG} -funroll-loops
 
 LIB_DEFLATE=libs/libdeflate/build/libdeflate.a
 
-deflate: 
+deflate:
 	cmake -S libs/libdeflate -B libs/libdeflate/build
 	cmake --build libs/libdeflate/build
 
@@ -160,14 +160,14 @@ COMMON_OBJS := src/msa.o \
 	src/core/profile_seq.o \
 	src/core/sequence.o \
 	src/core/queues.o
-		
+
 src/lcs/lcsbp_classic.o : src/lcs/lcsbp_classic.cpp
 	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp_classic.cpp -o $@
 
-ifeq ($(SIMD), NONE) 
+ifeq ($(SIMD), NONE)
 LCS_OBJS := src/lcs/lcsbp.o \
 	src/lcs/lcsbp_classic.o
-UTILS_OBJS := src/utils/utils.o 
+UTILS_OBJS := src/utils/utils.o
 
 src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
 	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp.cpp -o $@
@@ -179,7 +179,7 @@ LCS_OBJS := src/lcs/lcsbp.o \
 	src/lcs/lcsbp_classic.o \
 	src/lcs/lcsbp_avx_intr.o
 UTILS_OBJS := src/utils/utils.o \
-	src/utils/utils_avx.o 
+	src/utils/utils_avx.o
 
 src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
 	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp.cpp -o $@
@@ -195,7 +195,7 @@ LCS_OBJS := src/lcs/lcsbp.o \
 	src/lcs/lcsbp_classic.o \
 	src/lcs/lcsbp_neon_intr.o
 UTILS_OBJS := src/utils/utils.o \
-	src/utils/utils_neon.o 
+	src/utils/utils_neon.o
 
 src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
 	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp.cpp -o $@
@@ -235,7 +235,7 @@ endif
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-famsa: deflate $(MIMALLOC_OBJ) src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
+famsa3di: deflate $(MIMALLOC_OBJ) src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
 	$(CXX) $(CLINK) -o $@ $(MIMALLOC_OBJ) src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS) $(LIB_DEFLATE)
 
 clean:
@@ -246,5 +246,5 @@ clean:
 	-rm src/utils/*.o
 	-rm src/*.o
 	-rm libs/mimalloc/*.o
-	-rm famsa
+	-rm famsa3di
 
